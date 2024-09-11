@@ -31,10 +31,10 @@ model Character {
 }
 
 model Inventory {
-  id          Int        @id @default(autoincrement())
-  charactedId Int
-  character   Character?
-  items       Item[]
+  id           Int        @id @default(autoincrement())
+  characterId Int
+  character    Character?
+  items        Item[]
 }
 
 model Equipped {
@@ -52,7 +52,4 @@ model Item {
   equippedId  Int?
   equipped    Equipped?  @relation(fields: [equippedId], references: [id])
   inventory   Inventory? @relation(fields: [inventoryId], references: [id])
-
-  @@index([equippedId], map: "Item_equippedId_fkey")
-  @@index([inventoryId], map: "Item_inventoryId_fkey")
 }
