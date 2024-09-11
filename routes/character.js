@@ -102,5 +102,49 @@ router.delete("/:id", authenticateToken, async (req, res) => {
     }
   });
 
+  // 캐릭터 조회 API
+router.get("/:id", authenticateToken, async (req, res) => {
+    const characterId = parseInt(req.params.id);
+    const userId = req.user ? req.user.userId : null; // JWT로부터 추출된 userId (로그인된 경우만 존재)
+  
+    try {
+      // 조회할 캐릭터 정보 가져오기
+      const character = await prisma.character.findUnique({
+        where: { id: characterId },
+        select: {
+          name: true,
+          health: true,
+          power: true,
+          money: true, // 소유자인 경우에만 반환할 필드
+          accountId: true, // 소유자 확인을 위해 accountId 가져오기
+        },
+      });
+  
+      if (!character) {
+        return res.status(404).json({ error: "존재하지 않는 캐릭터입니다." });
+      }
+  
+      // 캐릭터가 로그인한 사용자의 소유인지 확인
+      if (userId && character.accountId === userId) {
+        // 본인의 캐릭터일 경우, money 포함하여 반환
+        return res.status(200).json({
+          name: character.name,
+          health: character.health,
+          power: character.power,
+          money: character.money,
+        });
+      } else {
+        // 다른 사람의 캐릭터이거나 로그인하지 않은 경우
+        return res.status(200).json({
+          name: character.name,
+          health: character.health,
+          power: character.power,
+        });
+      }
+    } catch (error) {
+      console.error("캐릭터 조회 중 오류 발생:", error);
+      res.status(500).json({ error: "캐릭터 조회 중 오류가 발생했습니다." });
+    }
+  });
 
 export default router;
