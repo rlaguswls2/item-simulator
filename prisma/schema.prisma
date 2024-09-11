@@ -18,21 +18,21 @@ model Account {
 
 model Character {
   id          Int       @id @default(autoincrement())
-  name        String
+  name        String    @unique
   health      Int
   power       Int
   money       Int
-  accountId   Int
-  inventoryId Int       @unique
-  equippedId  Int       @unique
   account     Account   @relation(fields: [accountId], references: [id])
-  equipped    Equipped  @relation(fields: [equippedId], references: [id])
-  inventory   Inventory @relation(fields: [inventoryId], references: [id])
+  accountId   Int
+  equipped    Equipped?  @relation(fields: [equippedId], references: [id])
+  equippedId  Int?       @unique
+  inventory   Inventory? @relation(fields: [inventoryId], references: [id])
+  inventoryId Int?       @unique
 }
 
 model Inventory {
   id           Int        @id @default(autoincrement())
-  characterId Int
+  characterId  Int
   character    Character?
   items        Item[]
 }

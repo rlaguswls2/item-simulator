@@ -12,7 +12,7 @@ const app = express();
 app.use(express.json()); // body-parser 대체
 // 회원가입 라우트를 포함한 auth 경로
 app.use('/auth', authRoutes);
-app.use('/character', characterRoutes);
+app.use('/characters', characterRoutes);
 
 app.get('/', (req, res) => {
   res.send('Item Simulator API is running!');

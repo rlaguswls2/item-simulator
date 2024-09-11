@@ -92,7 +92,6 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ error: "비밀번호가 틀렸습니다." });
     }
 
-    console.log("JWT_SECRET:", process.env.JWT_SECRET);
     const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
       expiresIn: "1h",
     });
