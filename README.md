@@ -1,3 +1,61 @@
+**서버주소** 
+http://54.180.154.54:3000/
+
+회원가입 API
+POST auth/signup
+
+로그인 API
+POST auth/login
+
+캐릭터 생성 API
+POST characters/create-character
+
+캐릭터 삭제 API
+DELETE characters/:id
+예: characters/123 (ID가 123인 캐릭터 삭제)
+
+캐릭터 조회 API
+GET characters/:id
+예: characters/123 (ID가 123인 캐릭터 조회)
+
+캐릭터 인벤토리 아이템 목록 조회 API
+GET characters/inventory/:characterId
+예: characters/inventory/123 (ID가 123인 캐릭터의 인벤토리 아이템 조회)
+
+캐릭터가 장착한 아이템 목록 조회 API
+GET characters/equipped/:characterId
+예: characters/equipped/123 (ID가 123인 캐릭터의 장착 아이템 조회)
+
+아이템 생성 API
+POST item/create-item
+
+아이템 수정 API
+PATCH item/update-item/:item_code
+예: item/update-item/101 (item_code가 101인 아이템 수정)
+
+아이템 목록 조회 API
+GET item/items
+
+아이템 구매 API
+POST item/buy-items/:characterId
+예: /buy-items/123 (ID가 123인 캐릭터가 아이템을 구매)
+
+아이템 판매 API
+POST item/sell-items/:characterId
+예: item/sell-items/123 (ID가 123인 캐릭터가 아이템을 판매)
+
+아이템 장착 API
+POST item/equip-item/:characterId
+예: item/equip-item/123 (ID가 123인 캐릭터가 아이템을 장착)
+
+아이템 탈착 API
+POST item/unequip-item/:characterId
+예: item/unequip-item/123 (ID가 123인 캐릭터가 아이템을 탈착)
+
+게임 머니를 버는 API
+POST /money/:characterId
+
+
 1. **암호화 방식**
     - 비밀번호를 DB에 저장할 때 Hash를 이용했는데, Hash는 단방향 암호화와 양방향 암호화 중 어떤 암호화 방식에 해당할까요?
       - 단뱡향 암호화 방식
