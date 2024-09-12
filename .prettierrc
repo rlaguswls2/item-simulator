@@ -2,6 +2,6 @@
     "printWidth": 80,
     "semi": true,
     "singleQuote": false,
-    "tabwidth": 2,
+    "tabwidth": 8,
     "trailingCommna": "es5"
 }

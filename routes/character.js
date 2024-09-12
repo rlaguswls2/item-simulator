@@ -16,7 +16,7 @@ router.post("/create-character", authenticateToken, async (req, res) => {
   try {
     // 캐릭터 이름 중복 확인
     const existingCharacter = await prisma.character.findUnique({
-      where: { name },
+        where: { name },
     });
 
     if (existingCharacter) {
@@ -32,32 +32,42 @@ router.post("/create-character", authenticateToken, async (req, res) => {
 
     // 트랜잭션으로 캐릭터와 관련 데이터를 안전하게 생성
     const newCharacter = await prisma.$transaction(async (prisma) => {
-      // 1. 캐릭터 생성
-      const character = await prisma.character.create({
-        data: {
-          name,
-          health: defaultStats.health,
-          power: defaultStats.power,
-          money: defaultStats.money,
-          accountId: req.user.userId, // JWT에서 추출한 사용자 ID로 계정 연결
-        },
-      });
+        // 1. 캐릭터 생성
+        const character = await prisma.character.create({
+            data: {
+            name,
+            health: defaultStats.health,
+            power: defaultStats.power,
+            money: defaultStats.money,
+            account: {
+                    connect: { id: req.user.userId }, // 수동으로 Account 연결
+                },
+            },
+        });
 
-      // 2. 생성된 캐릭터 ID로 equipped와 inventory 생성
-      const equipped = await prisma.equipped.create({
-        data: {
-          characterId: character.id,  // 생성된 캐릭터의 ID로 연결
-        },
-      });
+        // 2. 생성된 캐릭터 ID로 equipped와 inventory 생성
+        const equipped = await prisma.equipped.create({
+            data: {
+                characterId: character.id,  // 생성된 캐릭터의 ID로 연결
+            },
+        });
 
-      const inventory = await prisma.inventory.create({
-        data: {
-          characterId: character.id,  // 생성된 캐릭터의 ID로 연결
-        },
-      });
+        const inventory = await prisma.inventory.create({
+            data: {
+                characterId: character.id,  // 생성된 캐릭터의 ID로 연결
+            },
+        });
 
-      // 캐릭터 생성 완료
-      return character;
+        // 3. 캐릭터의 equippedId와 inventoryId를 업데이트하여 연결
+        const updatedCharacter = await prisma.character.update({
+            where: { id: character.id },
+            data: {
+                equippedId: equipped.id, // 장비 ID 연결
+                inventoryId: inventory.id, // 인벤토리 ID 연결
+            },
+        });
+
+        return updatedCharacter;
     });
 
     res.status(201).json({
@@ -76,31 +86,31 @@ router.delete("/:id", authenticateToken, async (req, res) => {
     const userId = req.user.userId;  // JWT에서 추출한 사용자 ID
   
     try {
-      // 1. 삭제할 캐릭터가 존재하는지 확인
-      const character = await prisma.character.findUnique({
+        // 1. 삭제할 캐릭터가 존재하는지 확인
+        const character = await prisma.character.findUnique({
         where: { id: characterId },
-      });
-  
-      if (!character) {
-        return res.status(404).json({ error: "존재하지 않는 캐릭터입니다." });
-      }
-  
-      // 2. 캐릭터가 로그인한 사용자의 캐릭터인지 확인
-      if (character.accountId !== userId) {
-        return res.status(403).json({ error: "자신의 캐릭터만 삭제할 수 있습니다." });
-      }
-  
-      // 3. 캐릭터 삭제 (관련된 equipped 및 inventory도 자동으로 삭제됨)
-      await prisma.character.delete({
-        where: { id: characterId },
-      });
-  
-      res.status(200).json({ message: "캐릭터가 성공적으로 삭제되었습니다." });
+        });
+
+        if (!character) {
+            return res.status(404).json({ error: "존재하지 않는 캐릭터입니다." });
+        }
+    
+        // 2. 캐릭터가 로그인한 사용자의 캐릭터인지 확인
+        if (character.accountId !== userId) {
+            return res.status(403).json({ error: "자신의 캐릭터만 삭제할 수 있습니다." });
+        }
+    
+        // 3. 캐릭터 삭제 (관련된 equipped 및 inventory도 자동으로 삭제됨)
+        await prisma.character.delete({
+            where: { id: characterId },
+        });
+    
+        res.status(200).json({ message: "캐릭터가 성공적으로 삭제되었습니다." });
     } catch (error) {
-      console.error("캐릭터 삭제 중 오류 발생:", error);
-      res.status(500).json({ error: "캐릭터 삭제 중 오류가 발생했습니다." });
+        console.error("캐릭터 삭제 중 오류 발생:", error);
+        res.status(500).json({ error: "캐릭터 삭제 중 오류가 발생했습니다." });
     }
-  });
+});
 
   // 캐릭터 조회 API
 router.get("/:id", authenticateToken, async (req, res) => {
@@ -145,6 +155,80 @@ router.get("/:id", authenticateToken, async (req, res) => {
       console.error("캐릭터 조회 중 오류 발생:", error);
       res.status(500).json({ error: "캐릭터 조회 중 오류가 발생했습니다." });
     }
-  });
+});
+
+  // 캐릭터 인벤토리 내 아이템 목록 조회 API
+router.get("/inventory/:characterId", authenticateToken, async (req, res) => {
+    const { characterId } = req.params;
+  
+    try {
+      // 1. 캐릭터 조회
+      const character = await prisma.character.findUnique({
+        where: { id: parseInt(characterId) },
+        include: {
+          inventory: {
+            include: {
+              items: true, // 인벤토리에 속한 아이템 포함
+            },
+          },
+        },
+      });
+  
+      if (!character) {
+        return res.status(404).json({ error: "존재하지 않는 캐릭터입니다." });
+      }
+  
+      // 2. 인벤토리에서 아이템 목록을 가져옴
+      const items = character.inventory?.items.map(item => ({
+        item_code: item.item_code,
+        item_name: item.name,
+        count: item.count,
+      })) || [];
+  
+      // 3. 응답
+      res.status(200).json(items);
+  
+    } catch (error) {
+      console.error("아이템 목록 조회 중 오류 발생:", error);
+      res.status(500).json({ error: "아이템 목록 조회 중 오류가 발생했습니다." });
+    }
+});
+    
+  
+// 캐릭터가 장착한 아이템 목록 조회 API
+router.get("/equipped/:characterId", async (req, res) => {
+    const { characterId } = req.params;
+  
+    try {
+      // 1. 캐릭터 조회 (장착한 아이템 포함)
+      const character = await prisma.character.findUnique({
+        where: { id: parseInt(characterId) },
+        include: {
+          equipped: {
+            include: {
+              items: true, // 장착된 아이템 포함
+            },
+          },
+        },
+      });
+  
+      if (!character) {
+        return res.status(404).json({ error: "존재하지 않는 캐릭터입니다." });
+      }
+  
+      // 2. 장착된 아이템 목록 구성
+      const equippedItems = character.equipped?.items.map(item => ({
+        item_code: item.item_code,
+        item_name: item.name,
+      })) || [];
+  
+      // 3. 응답
+      res.status(200).json(equippedItems);
+  
+    } catch (error) {
+      console.error("장착된 아이템 목록 조회 중 오류 발생:", error);
+      res.status(500).json({ error: "장착된 아이템 목록 조회 중 오류가 발생했습니다." });
+    }
+});
 
 export default router;

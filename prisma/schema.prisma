@@ -1,55 +1,68 @@
-generator client {
-  provider = "prisma-client-js"
-}
+  generator client {
+    provider = "prisma-client-js"
+  }
 
-datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
-}
+  datasource db {
+    provider = "mysql"
+    url      = env("DATABASE_URL")
+  }
 
-model Account {
-  id         Int         @id @default(autoincrement())
-  username   String      @unique
-  password   String
-  characters Character[]
+  model Account {
+    id         Int         @id @default(autoincrement())
+    username   String      @unique
+    password   String
+    characters Character[]
 
-  @@map("Account")
-}
+    @@map("Account")
+  }
 
-model Character {
-  id          Int       @id @default(autoincrement())
-  name        String    @unique
-  health      Int
-  power       Int
-  money       Int
-  account     Account   @relation(fields: [accountId], references: [id])
-  accountId   Int
-  equipped    Equipped?  @relation(fields: [equippedId], references: [id])
-  equippedId  Int?       @unique
-  inventory   Inventory? @relation(fields: [inventoryId], references: [id])
-  inventoryId Int?       @unique
-}
+  model Character {
+    id          Int       @id @default(autoincrement())
+    name        String    @unique
+    health      Int
+    power       Int
+    money       Int
+    account     Account   @relation(fields: [accountId], references: [id])
+    accountId   Int
+    equipped    Equipped?  @relation(fields: [equippedId], references: [id])
+    equippedId  Int?       @unique
+    inventory   Inventory? @relation(fields: [inventoryId], references: [id])
+    inventoryId Int?       @unique
+  }
 
-model Inventory {
-  id           Int        @id @default(autoincrement())
-  characterId  Int
-  character    Character?
-  items        Item[]
-}
+  model Inventory {
+    id           Int        @id @default(autoincrement())
+    characterId  Int
+    character    Character?
+    items        Item[]
+  }
 
-model Equipped {
-  id          Int        @id @default(autoincrement())
-  characterId Int
-  character   Character?
-  items       Item[]
-}
+  model Equipped {
+    id          Int        @id @default(autoincrement())
+    characterId Int
+    character   Character?
+    items       Item[]
+  }
 
-model Item {
-  id          Int        @id @default(autoincrement())
-  name        String
-  description String?
-  inventoryId Int?
-  equippedId  Int?
-  equipped    Equipped?  @relation(fields: [equippedId], references: [id])
-  inventory   Inventory? @relation(fields: [inventoryId], references: [id])
+  model Shop {
+    id         Int    @id @default(autoincrement())
+    item_code  Int    @unique
+    name       String
+    price      Int
+    health     Int
+    power      Int
+  } 
+
+  model Item {
+    id          Int        @id @default(autoincrement())
+    item_code   Int
+    name        String
+    price       Int
+    health      Int
+    power       Int
+    count       Int        @default(1)
+    inventoryId  Int?       
+    equippedId   Int?       
+    inventory    Inventory? @relation(fields: [inventoryId], references: [id]) // 실제 관계 필드
+    equipped     Equipped?  @relation(fields: [equippedId], references: [id])  // 실제 관계 필드
 }
